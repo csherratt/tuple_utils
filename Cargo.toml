@@ -1,0 +1,6 @@
+[package]
+name = "tuple_utils"
+version = "0.1.0"
+authors = ["Colin Sherratt <colin.sherratt@gmail.com>"]
+
+[dependencies]
