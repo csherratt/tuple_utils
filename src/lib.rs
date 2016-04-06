@@ -1,4 +1,4 @@
-
+//! A simple set of utility traits for working with tuples
 
 /// Helper trait to allow Appending of tuples
 pub trait Append<T> {
@@ -344,6 +344,8 @@ mod test {
         assert_eq!(c.3, "foo");
         assert_eq!(c.4, "bar");
 
+        // assert to see if adding an empty
+        // tuple results in a tuple.
         let a = ("test",);
         let out = a.merge(());
         assert_eq!(out.0, "test");
