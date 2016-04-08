@@ -17,16 +17,6 @@ pub trait Prepend<T> {
     fn prepend(self, T) -> Self::Output;
 }
 
-/// Helper trait that allow for merging of tuples
-pub trait Merge<T> {
-    type Output;
-    /// merge LHS with RHS returning a new tuple
-    /// that contains the elements of both tuples
-    /// ordering is preserved such that LHS elements
-    /// come before RHS elements.
-    fn merge(self, T) -> Self::Output;
-}
-
 macro_rules! tuple_impl {
     // use variables to indicate the arity of the tuple
     ($($from:ident),*) => {
@@ -124,6 +114,16 @@ macro_rules! merge_impl {
             fn merge(self, _: ()) -> () { self }
         }
     };
+}
+
+/// Helper trait that allow for merging of tuples
+pub trait Merge<T> {
+    type Output;
+    /// merge LHS with RHS returning a new tuple
+    /// that contains the elements of both tuples
+    /// ordering is preserved such that LHS elements
+    /// come before RHS elements.
+    fn merge(self, T) -> Self::Output;
 }
 
 // I wish I knew a better way....
@@ -284,10 +284,189 @@ merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O] [P]}
 merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P] []}
 
 
+/// Tries to split a tuple into two tuples
+/// if the tuple is odd sized the Right side will
+/// contain the extra element
+pub trait Split {
+    type Left;
+    type Right;
+
+    fn split(self) -> (Self::Left, Self::Right);
+}
+
+impl<A, B> Split for (A, B) {
+    type Left = (A,);
+    type Right = (B,);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b) => ((a,), (b,))
+        }
+    }
+}
+
+impl<A, B, C> Split for (A, B, C) {
+    type Left = (A,);
+    type Right = (B, C);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c) => ((a,), (b, c))
+        }
+    }
+}
+
+impl<A, B, C, D> Split for (A, B, C, D) {
+    type Left = (A, B);
+    type Right = (C, D);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d) => ((a, b), (c, d))
+        }
+    }
+}
+
+impl<A, B, C, D, E> Split for (A, B, C, D, E) {
+    type Left = (A, B);
+    type Right = (C, D, E);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e) => ((a, b), (c, d, e))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F> Split for (A, B, C, D, E, F) {
+    type Left = (A, B, C);
+    type Right = (D, E, F);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f) => ((a, b, c), (d, e, f))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G> Split for (A, B, C, D, E, F, G) {
+    type Left = (A, B, C);
+    type Right = (D, E, F, G);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g) =>
+                ((a, b, c),
+                 (d, e, f, g))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H> Split for (A, B, C, D, E, F, G, H) {
+    type Left = (A, B, C, D);
+    type Right = (E, F, G, H);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h) =>
+                ((a, b, c, d),
+                 (e, f, g, h))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I> Split for (A, B, C, D, E, F, G, H, I) {
+    type Left = (A, B, C, D);
+    type Right = (E, F, G, H, I);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h, i) =>
+                ((a, b, c, d),
+                 (e, f, g, h, i))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J> Split for (A, B, C, D, E, F, G, H, I, J) {
+    type Left = (A, B, C, D, E);
+    type Right = (F, G, H, I, J);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h, i, j) =>
+                ((a, b, c, d, e),
+                 (f, g, h, i, j))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K> Split for (A, B, C, D, E, F, G, H, I, J, K) {
+    type Left = (A, B, C, D, E);
+    type Right = (F, G, H, I, J, K);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h, i, j, k) =>
+                ((a, b, c, d, e),
+                 (f, g, h, i, j, k))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L> Split for (A, B, C, D, E, F, G, H, I, J, K, L) {
+    type Left = (A, B, C, D, E, F);
+    type Right = (G, H, I, J, K, L);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h, i, j, k, l) =>
+                ((a, b, c, d, e, f),
+                 (g, h, i, j, k, l))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
+    type Left = (A, B, C, D, E, F);
+    type Right = (G, H, I, J, K, L, M);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h, i, j, k, l, m) =>
+                ((a, b, c, d, e, f),
+                 (g, h, i, j, k, l, m))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
+    type Left = (A, B, C, D, E, F, G);
+    type Right = (H, I, J, K, L, M, N);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h, i, j, k, l, m, n) =>
+                ((a, b, c, d, e, f, g),
+                 (h, i, j, k, l, m, n))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
+    type Left = (A, B, C, D, E, F, G);
+    type Right = (H, I, J, K, L, M, N, O);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) =>
+                ((a, b, c, d, e, f, g),
+                 (h, i, j, k, l, m, n, o))
+        }
+    }
+}
+
+impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
+    type Left = (A, B, C, D, E, F, G, H);
+    type Right = (I, J, K, L, M, N, O, P);
+    fn split(self) -> (Self::Left, Self::Right) {
+        match self {
+            (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) =>
+                ((a, b, c, d, e, f, g, h),
+                 (i, j, k, l, m, n, o, p))
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {
-    use {Append, Prepend, Merge};
+    use {Append, Prepend, Merge, Split};
 
     #[test]
     fn append() {
@@ -353,5 +532,14 @@ mod test {
         let a = ("test",);
         let out = ().merge(a);
         assert_eq!(out.0, "test");
+    }
+
+    #[test]
+    fn split() {
+        let a = (1, 2, 3);
+        let (b, c) = a.split();
+        assert_eq!(b.0, 1);
+        assert_eq!(c.0, 2);
+        assert_eq!(c.1, 3);
     }
 }
