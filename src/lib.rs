@@ -65,7 +65,7 @@ for_each_prefix!{
 }
 
 macro_rules! merge_impl {
-    ([$($a:ident),+] [$($b:ident),+]) => {
+    ([$($a:ident,)+], [$($b:ident,)+]) => {
         // the trailing commas are for the 1 tuple
         impl<$($a,)* $($b,)*> Merge<($($b),+,)> for ( $($a),+ ,) {
             type Output = ($($a,)+ $($b,)+);
@@ -80,7 +80,7 @@ macro_rules! merge_impl {
         }
     };
 
-    ([$($a:ident),+] []) => {
+    ([$($a:ident,)+], []) => {
         // the trailing commas are for the 1 tuple
         impl<$($a,)*> Merge<()> for ( $($a),+ ,) {
             type Output = ($($a,)+);
@@ -91,7 +91,7 @@ macro_rules! merge_impl {
         }
     };
 
-    ([] [$($a:ident),+]) => {
+    ([], [$($a:ident,)+]) => {
         // the trailing commas are for the 1 tuple
         impl<$($a,)*> Merge<( $($a),+ ,)> for () {
             type Output = ($($a),+ ,);
@@ -102,7 +102,7 @@ macro_rules! merge_impl {
         }
     };
 
-    ([] []) => {
+    ([], []) => {
         // the trailing commas are for the 1 tuple
         impl Merge<()> for () {
             type Output = ();
@@ -124,163 +124,31 @@ pub trait Merge<T> {
     fn merge(self, T) -> Self::Output;
 }
 
-// I wish I knew a better way....
-// this is every possible LHS RHS type of a tuple that when merged
-// would result in a tuple that was 16 elements or less.
-merge_impl!{[] []}
-merge_impl!{[] [A]}
-merge_impl!{[] [A, B]}
-merge_impl!{[] [A, B, C]}
-merge_impl!{[] [A, B, C, D]}
-merge_impl!{[] [A, B, C, D, E]}
-merge_impl!{[] [A, B, C, D, E, F]}
-merge_impl!{[] [A, B, C, D, E, F, G]}
-merge_impl!{[] [A, B, C, D, E, F, G, H]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L, M]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A] []}
-merge_impl!{[A] [B]}
-merge_impl!{[A] [B, C]}
-merge_impl!{[A] [B, C, D]}
-merge_impl!{[A] [B, C, D, E]}
-merge_impl!{[A] [B, C, D, E, F]}
-merge_impl!{[A] [B, C, D, E, F, G]}
-merge_impl!{[A] [B, C, D, E, F, G, H]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L, M]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B] []}
-merge_impl!{[A, B] [C]}
-merge_impl!{[A, B] [C, D]}
-merge_impl!{[A, B] [C, D, E]}
-merge_impl!{[A, B] [C, D, E, F]}
-merge_impl!{[A, B] [C, D, E, F, G]}
-merge_impl!{[A, B] [C, D, E, F, G, H]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L, M]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C] []}
-merge_impl!{[A, B, C] [D]}
-merge_impl!{[A, B, C] [D, E]}
-merge_impl!{[A, B, C] [D, E, F]}
-merge_impl!{[A, B, C] [D, E, F, G]}
-merge_impl!{[A, B, C] [D, E, F, G, H]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L, M]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D] []}
-merge_impl!{[A, B, C, D] [E]}
-merge_impl!{[A, B, C, D] [E, F]}
-merge_impl!{[A, B, C, D] [E, F, G]}
-merge_impl!{[A, B, C, D] [E, F, G, H]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L, M]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E] []}
-merge_impl!{[A, B, C, D, E] [F]}
-merge_impl!{[A, B, C, D, E] [F, G]}
-merge_impl!{[A, B, C, D, E] [F, G, H]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L, M]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F] []}
-merge_impl!{[A, B, C, D, E, F] [G]}
-merge_impl!{[A, B, C, D, E, F] [G, H]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L, M]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G] []}
-merge_impl!{[A, B, C, D, E, F, G] [H]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L, M]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H] []}
-merge_impl!{[A, B, C, D, E, F, G, H] [I]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L, M]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L, M]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L, M]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L, M]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] [M]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] [M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] [M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] [M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M] [N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M] [N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M] [N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N] [O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N] [O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O] [P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P] []}
+macro_rules! for_each_prefix_suffix (
+    ($m:ident, [$(($acc:tt),)*], []) => {
+        $m!([$($acc,)*], []);
+    };
+    ($m:ident, [$(($acc:tt),)*], [($arg0:tt), $(($arg:tt),)*]) => {
+        $m!([$($acc,)*], [$arg0, $($arg,)*]);
+        for_each_prefix_suffix!($m, [$(($acc),)* ($arg0),], [$(($arg),)*]);
+    };
+);
 
+macro_rules! merge_impl2(
+    ($($a: ident,)*) => (
+        for_each_prefix_suffix!(
+            merge_impl,
+            [],
+            [$(($a),)*]
+        );
+    );
+);
+
+for_each_prefix!{
+    merge_impl2,
+    [],
+    [(T0), (T1), (T2), (T3), (T4), (T5), (T6), (T7), (T8), (T9), (T10), (T11), (T12), (T13), (T14), (T15),]
+}
 
 /// Tries to split a tuple into two tuples
 /// if the tuple is odd sized the Right side will
