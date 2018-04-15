@@ -127,174 +127,35 @@ pub trait Split {
     fn split(self) -> (Self::Left, Self::Right);
 }
 
-impl<A, B> Split for (A, B) {
-    type Left = (A,);
-    type Right = (B,);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b) => ((a,), (b,))
+macro_rules! split_impl (
+    ($(($a:ident, $b:ident),)*) => (
+        impl<$($a,)* $($b,)*> Split for ($($a,)* $($b,)*) {
+            type Left = ($($a,)*);
+            type Right = ($($b,)*);
+            #[allow(non_snake_case)]
+            fn split(self) -> (Self::Left, Self::Right) {
+                match self {
+                    ($($a,)* $($b,)*) => (($($a,)*), ($($b,)*))
+                }
+            }
         }
-    }
-}
+        impl<$($a,)* $($b,)* TLast> Split for ($($a,)* $($b,)* TLast,) {
+            type Left = ($($a,)*);
+            type Right = ($($b,)* TLast,);
+            #[allow(non_snake_case)]
+            fn split(self) -> (Self::Left, Self::Right) {
+                match self {
+                    ($($a,)* $($b,)* t_last,) => (($($a,)*), ($($b,)* t_last,))
+                }
+            }
+        }
+    );
+);
 
-impl<A, B, C> Split for (A, B, C) {
-    type Left = (A,);
-    type Right = (B, C);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c) => ((a,), (b, c))
-        }
-    }
-}
-
-impl<A, B, C, D> Split for (A, B, C, D) {
-    type Left = (A, B);
-    type Right = (C, D);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d) => ((a, b), (c, d))
-        }
-    }
-}
-
-impl<A, B, C, D, E> Split for (A, B, C, D, E) {
-    type Left = (A, B);
-    type Right = (C, D, E);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e) => ((a, b), (c, d, e))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F> Split for (A, B, C, D, E, F) {
-    type Left = (A, B, C);
-    type Right = (D, E, F);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f) => ((a, b, c), (d, e, f))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G> Split for (A, B, C, D, E, F, G) {
-    type Left = (A, B, C);
-    type Right = (D, E, F, G);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g) =>
-                ((a, b, c),
-                 (d, e, f, g))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H> Split for (A, B, C, D, E, F, G, H) {
-    type Left = (A, B, C, D);
-    type Right = (E, F, G, H);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h) =>
-                ((a, b, c, d),
-                 (e, f, g, h))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I> Split for (A, B, C, D, E, F, G, H, I) {
-    type Left = (A, B, C, D);
-    type Right = (E, F, G, H, I);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i) =>
-                ((a, b, c, d),
-                 (e, f, g, h, i))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J> Split for (A, B, C, D, E, F, G, H, I, J) {
-    type Left = (A, B, C, D, E);
-    type Right = (F, G, H, I, J);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j) =>
-                ((a, b, c, d, e),
-                 (f, g, h, i, j))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K> Split for (A, B, C, D, E, F, G, H, I, J, K) {
-    type Left = (A, B, C, D, E);
-    type Right = (F, G, H, I, J, K);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k) =>
-                ((a, b, c, d, e),
-                 (f, g, h, i, j, k))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L> Split for (A, B, C, D, E, F, G, H, I, J, K, L) {
-    type Left = (A, B, C, D, E, F);
-    type Right = (G, H, I, J, K, L);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l) =>
-                ((a, b, c, d, e, f),
-                 (g, h, i, j, k, l))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Left = (A, B, C, D, E, F);
-    type Right = (G, H, I, J, K, L, M);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l, m) =>
-                ((a, b, c, d, e, f),
-                 (g, h, i, j, k, l, m))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Left = (A, B, C, D, E, F, G);
-    type Right = (H, I, J, K, L, M, N);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l, m, n) =>
-                ((a, b, c, d, e, f, g),
-                 (h, i, j, k, l, m, n))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Left = (A, B, C, D, E, F, G);
-    type Right = (H, I, J, K, L, M, N, O);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) =>
-                ((a, b, c, d, e, f, g),
-                 (h, i, j, k, l, m, n, o))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Left = (A, B, C, D, E, F, G, H);
-    type Right = (I, J, K, L, M, N, O, P);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) =>
-                ((a, b, c, d, e, f, g, h),
-                 (i, j, k, l, m, n, o, p))
-        }
-    }
+for_each_prefix!{
+    split_impl,
+    [],
+    [((T0, T1)), ((T2, T3)), ((T4, T5)), ((T6, T7)), ((T8, T9)), ((T10, T11)), ((T12, T13)), ((T14, T15)),]
 }
 
 #[cfg(test)]
@@ -377,5 +238,9 @@ mod test {
         assert_eq!(b.0, 1);
         assert_eq!(c.0, 2);
         assert_eq!(c.1, 3);
+        assert_eq!(().split(), ((), ()));
+        assert_eq!((1,).split(), ((), (1,)));
+        assert_eq!((1,2).split(), ((1,), (2,)));
+        assert_eq!((1,2,3).split(), ((1,), (2,3)));
     }
 }
