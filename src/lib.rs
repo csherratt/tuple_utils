@@ -19,14 +19,14 @@ pub trait Prepend<T> {
 
 macro_rules! tuple_impl {
     // use variables to indicate the arity of the tuple
-    ($($from:ident),*) => {
+    ($($from:ident,)*) => {
         // the trailing commas are for the 1 tuple
-        impl<$($from),* , T> Append<T> for ( $( $from ),* ,) {
-            type Output = ( $( $from ),*,  T);
+        impl<$($from,)* T> Append<T> for ( $( $from ,)* ) {
+            type Output = ( $( $from ,)*  T);
 
             #[inline]
             #[allow(non_snake_case)]
-            fn append(self, x: T) -> ( $( $from ),*,  T) {
+            fn append(self, x: T) -> ( $( $from ,)*  T) {
                 match self {
                     ($($from,)*) => ($($from,)* x)
                 }
@@ -34,12 +34,12 @@ macro_rules! tuple_impl {
         }
 
         // the trailing commas are for the 1 tuple
-        impl<$($from),* , T> Prepend<T> for ( $( $from ),* ,) {
-            type Output = (T, $( $from ),*);
+        impl<$($from,)*  T> Prepend<T> for ( $( $from ,)* ) {
+            type Output = (T, $( $from ,)*);
 
             #[inline]
             #[allow(non_snake_case)]
-            fn prepend(self, x: T) -> (T, $( $from ),*) {
+            fn prepend(self, x: T) -> (T, $( $from ,)*) {
                 match self {
                     ($($from,)*) => (x, $($from,)*)
                 }
@@ -48,23 +48,21 @@ macro_rules! tuple_impl {
     }
 }
 
-tuple_impl!{A}
-tuple_impl!{A, B}
-tuple_impl!{A, B, C}
-tuple_impl!{A, B, C, D}
-tuple_impl!{A, B, C, D, E}
-tuple_impl!{A, B, C, D, E, F}
-tuple_impl!{A, B, C, D, E, F, G}
-tuple_impl!{A, B, C, D, E, F, G, H}
-tuple_impl!{A, B, C, D, E, F, G, H, I}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L, M}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L, M, N}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P}
+macro_rules! for_each_prefix (
+    ($m:ident, [$(($acc:tt),)*], []) => {
+        $m!($($acc,)*);
+    };
+    ($m:ident, [$(($acc:tt),)*], [($arg0:tt), $(($arg:tt),)*]) => {
+        $m!($($acc,)*);
+        for_each_prefix!($m, [$(($acc),)* ($arg0),], [$(($arg),)*]);
+    };
+);
 
+for_each_prefix!{
+    tuple_impl,
+    [],
+    [(T0), (T1), (T2), (T3), (T4), (T5), (T6), (T7), (T8), (T9), (T10), (T11), (T12), (T13), (T14), (T15),]
+}
 
 macro_rules! merge_impl {
     ([$($a:ident),+] [$($b:ident),+]) => {
