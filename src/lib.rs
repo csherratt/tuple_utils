@@ -65,51 +65,18 @@ for_each_prefix!{
 }
 
 macro_rules! merge_impl {
-    ([$($a:ident,)+], [$($b:ident,)+]) => {
+    ([$($a:ident,)*], [$($b:ident,)*]) => {
         // the trailing commas are for the 1 tuple
-        impl<$($a,)* $($b,)*> Merge<($($b),+,)> for ( $($a),+ ,) {
-            type Output = ($($a,)+ $($b,)+);
+        impl<$($a,)* $($b,)*> Merge<($($b,)*)> for ( $($a,)* ) {
+            type Output = ($($a,)* $($b,)*);
 
             #[inline]
             #[allow(non_snake_case)]
-            fn merge(self, x: ($($b,)+)) -> ($($a,)+ $($b,)+) {
+            fn merge(self, x: ($($b,)*)) -> ($($a,)* $($b,)*) {
                 match (self, x) {
-                    (($($a,)+), ($($b,)+)) => ($($a,)+ $($b,)+)
+                    (($($a,)*), ($($b,)*)) => ($($a,)* $($b,)*)
                 }
             }
-        }
-    };
-
-    ([$($a:ident,)+], []) => {
-        // the trailing commas are for the 1 tuple
-        impl<$($a,)*> Merge<()> for ( $($a),+ ,) {
-            type Output = ($($a,)+);
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn merge(self, _: ()) -> ($($a,)+) { self }
-        }
-    };
-
-    ([], [$($a:ident,)+]) => {
-        // the trailing commas are for the 1 tuple
-        impl<$($a,)*> Merge<( $($a),+ ,)> for () {
-            type Output = ($($a),+ ,);
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn merge(self, x: ($($a,)+),) -> ($($a),+,) { x }
-        }
-    };
-
-    ([], []) => {
-        // the trailing commas are for the 1 tuple
-        impl Merge<()> for () {
-            type Output = ();
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn merge(self, _: ()) -> () { self }
         }
     };
 }
@@ -398,6 +365,9 @@ mod test {
         let a = ("test",);
         let out = ().merge(a);
         assert_eq!(out.0, "test");
+        assert_eq!(().merge(()), ());
+        assert_eq!(().merge((1,)), (1,));
+        assert_eq!((1,).merge(()), (1,));
     }
 
     #[test]
