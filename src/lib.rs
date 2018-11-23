@@ -19,14 +19,14 @@ pub trait Prepend<T> {
 
 macro_rules! tuple_impl {
     // use variables to indicate the arity of the tuple
-    ($($from:ident),*) => {
+    ($($from:ident,)*) => {
         // the trailing commas are for the 1 tuple
-        impl<$($from),* , T> Append<T> for ( $( $from ),* ,) {
-            type Output = ( $( $from ),*,  T);
+        impl<$($from,)* T> Append<T> for ( $( $from ,)* ) {
+            type Output = ( $( $from ,)*  T);
 
             #[inline]
             #[allow(non_snake_case)]
-            fn append(self, x: T) -> ( $( $from ),*,  T) {
+            fn append(self, x: T) -> ( $( $from ,)*  T) {
                 match self {
                     ($($from,)*) => ($($from,)* x)
                 }
@@ -34,12 +34,12 @@ macro_rules! tuple_impl {
         }
 
         // the trailing commas are for the 1 tuple
-        impl<$($from),* , T> Prepend<T> for ( $( $from ),* ,) {
-            type Output = (T, $( $from ),*);
+        impl<$($from,)*  T> Prepend<T> for ( $( $from ,)* ) {
+            type Output = (T, $( $from ,)*);
 
             #[inline]
             #[allow(non_snake_case)]
-            fn prepend(self, x: T) -> (T, $( $from ),*) {
+            fn prepend(self, x: T) -> (T, $( $from ,)*) {
                 match self {
                     ($($from,)*) => (x, $($from,)*)
                 }
@@ -48,70 +48,35 @@ macro_rules! tuple_impl {
     }
 }
 
-tuple_impl!{A}
-tuple_impl!{A, B}
-tuple_impl!{A, B, C}
-tuple_impl!{A, B, C, D}
-tuple_impl!{A, B, C, D, E}
-tuple_impl!{A, B, C, D, E, F}
-tuple_impl!{A, B, C, D, E, F, G}
-tuple_impl!{A, B, C, D, E, F, G, H}
-tuple_impl!{A, B, C, D, E, F, G, H, I}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L, M}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L, M, N}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O}
-tuple_impl!{A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P}
+macro_rules! for_each_prefix (
+    ($m:ident, [$(($acc:tt),)*], []) => {
+        $m!($($acc,)*);
+    };
+    ($m:ident, [$(($acc:tt),)*], [($arg0:tt), $(($arg:tt),)*]) => {
+        $m!($($acc,)*);
+        for_each_prefix!($m, [$(($acc),)* ($arg0),], [$(($arg),)*]);
+    };
+);
 
+for_each_prefix!{
+    tuple_impl,
+    [],
+    [(T0), (T1), (T2), (T3), (T4), (T5), (T6), (T7), (T8), (T9), (T10), (T11), (T12), (T13), (T14), (T15),]
+}
 
 macro_rules! merge_impl {
-    ([$($a:ident),+] [$($b:ident),+]) => {
+    ([$($a:ident,)*], [$($b:ident,)*]) => {
         // the trailing commas are for the 1 tuple
-        impl<$($a,)* $($b,)*> Merge<($($b),+,)> for ( $($a),+ ,) {
-            type Output = ($($a,)+ $($b,)+);
+        impl<$($a,)* $($b,)*> Merge<($($b,)*)> for ( $($a,)* ) {
+            type Output = ($($a,)* $($b,)*);
 
             #[inline]
             #[allow(non_snake_case)]
-            fn merge(self, x: ($($b,)+)) -> ($($a,)+ $($b,)+) {
+            fn merge(self, x: ($($b,)*)) -> ($($a,)* $($b,)*) {
                 match (self, x) {
-                    (($($a,)+), ($($b,)+)) => ($($a,)+ $($b,)+)
+                    (($($a,)*), ($($b,)*)) => ($($a,)* $($b,)*)
                 }
             }
-        }
-    };
-
-    ([$($a:ident),+] []) => {
-        // the trailing commas are for the 1 tuple
-        impl<$($a,)*> Merge<()> for ( $($a),+ ,) {
-            type Output = ($($a,)+);
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn merge(self, _: ()) -> ($($a,)+) { self }
-        }
-    };
-
-    ([] [$($a:ident),+]) => {
-        // the trailing commas are for the 1 tuple
-        impl<$($a,)*> Merge<( $($a),+ ,)> for () {
-            type Output = ($($a),+ ,);
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn merge(self, x: ($($a,)+),) -> ($($a),+,) { x }
-        }
-    };
-
-    ([] []) => {
-        // the trailing commas are for the 1 tuple
-        impl Merge<()> for () {
-            type Output = ();
-
-            #[inline]
-            #[allow(non_snake_case)]
-            fn merge(self, _: ()) -> () { self }
         }
     };
 }
@@ -126,163 +91,31 @@ pub trait Merge<T> {
     fn merge(self, T) -> Self::Output;
 }
 
-// I wish I knew a better way....
-// this is every possible LHS RHS type of a tuple that when merged
-// would result in a tuple that was 16 elements or less.
-merge_impl!{[] []}
-merge_impl!{[] [A]}
-merge_impl!{[] [A, B]}
-merge_impl!{[] [A, B, C]}
-merge_impl!{[] [A, B, C, D]}
-merge_impl!{[] [A, B, C, D, E]}
-merge_impl!{[] [A, B, C, D, E, F]}
-merge_impl!{[] [A, B, C, D, E, F, G]}
-merge_impl!{[] [A, B, C, D, E, F, G, H]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L, M]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[] [A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A] []}
-merge_impl!{[A] [B]}
-merge_impl!{[A] [B, C]}
-merge_impl!{[A] [B, C, D]}
-merge_impl!{[A] [B, C, D, E]}
-merge_impl!{[A] [B, C, D, E, F]}
-merge_impl!{[A] [B, C, D, E, F, G]}
-merge_impl!{[A] [B, C, D, E, F, G, H]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L, M]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A] [B, C, D, E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B] []}
-merge_impl!{[A, B] [C]}
-merge_impl!{[A, B] [C, D]}
-merge_impl!{[A, B] [C, D, E]}
-merge_impl!{[A, B] [C, D, E, F]}
-merge_impl!{[A, B] [C, D, E, F, G]}
-merge_impl!{[A, B] [C, D, E, F, G, H]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L, M]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B] [C, D, E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C] []}
-merge_impl!{[A, B, C] [D]}
-merge_impl!{[A, B, C] [D, E]}
-merge_impl!{[A, B, C] [D, E, F]}
-merge_impl!{[A, B, C] [D, E, F, G]}
-merge_impl!{[A, B, C] [D, E, F, G, H]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L, M]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C] [D, E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D] []}
-merge_impl!{[A, B, C, D] [E]}
-merge_impl!{[A, B, C, D] [E, F]}
-merge_impl!{[A, B, C, D] [E, F, G]}
-merge_impl!{[A, B, C, D] [E, F, G, H]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L, M]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D] [E, F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E] []}
-merge_impl!{[A, B, C, D, E] [F]}
-merge_impl!{[A, B, C, D, E] [F, G]}
-merge_impl!{[A, B, C, D, E] [F, G, H]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L, M]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E] [F, G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F] []}
-merge_impl!{[A, B, C, D, E, F] [G]}
-merge_impl!{[A, B, C, D, E, F] [G, H]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L, M]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F] [G, H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G] []}
-merge_impl!{[A, B, C, D, E, F, G] [H]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L, M]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G] [H, I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H] []}
-merge_impl!{[A, B, C, D, E, F, G, H] [I]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L, M]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H] [I, J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L, M]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I] [J, K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L, M]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J] [K, L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L, M]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L, M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L, M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K] [L, M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] [M]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] [M, N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] [M, N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L] [M, N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M] [N]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M] [N, O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M] [N, O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N] [O]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N] [O, P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O] []}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O] [P]}
-merge_impl!{[A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P] []}
+macro_rules! for_each_prefix_suffix (
+    ($m:ident, [$(($acc:tt),)*], []) => {
+        $m!([$($acc,)*], []);
+    };
+    ($m:ident, [$(($acc:tt),)*], [($arg0:tt), $(($arg:tt),)*]) => {
+        $m!([$($acc,)*], [$arg0, $($arg,)*]);
+        for_each_prefix_suffix!($m, [$(($acc),)* ($arg0),], [$(($arg),)*]);
+    };
+);
 
+macro_rules! merge_impl2(
+    ($($a: ident,)*) => (
+        for_each_prefix_suffix!(
+            merge_impl,
+            [],
+            [$(($a),)*]
+        );
+    );
+);
+
+for_each_prefix!{
+    merge_impl2,
+    [],
+    [(T0), (T1), (T2), (T3), (T4), (T5), (T6), (T7), (T8), (T9), (T10), (T11), (T12), (T13), (T14), (T15),]
+}
 
 /// Tries to split a tuple into two tuples
 /// if the tuple is odd sized the Right side will
@@ -294,174 +127,35 @@ pub trait Split {
     fn split(self) -> (Self::Left, Self::Right);
 }
 
-impl<A, B> Split for (A, B) {
-    type Left = (A,);
-    type Right = (B,);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b) => ((a,), (b,))
+macro_rules! split_impl (
+    ($(($a:ident, $b:ident),)*) => (
+        impl<$($a,)* $($b,)*> Split for ($($a,)* $($b,)*) {
+            type Left = ($($a,)*);
+            type Right = ($($b,)*);
+            #[allow(non_snake_case)]
+            fn split(self) -> (Self::Left, Self::Right) {
+                match self {
+                    ($($a,)* $($b,)*) => (($($a,)*), ($($b,)*))
+                }
+            }
         }
-    }
-}
+        impl<$($a,)* $($b,)* TLast> Split for ($($a,)* $($b,)* TLast,) {
+            type Left = ($($a,)*);
+            type Right = ($($b,)* TLast,);
+            #[allow(non_snake_case)]
+            fn split(self) -> (Self::Left, Self::Right) {
+                match self {
+                    ($($a,)* $($b,)* t_last,) => (($($a,)*), ($($b,)* t_last,))
+                }
+            }
+        }
+    );
+);
 
-impl<A, B, C> Split for (A, B, C) {
-    type Left = (A,);
-    type Right = (B, C);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c) => ((a,), (b, c))
-        }
-    }
-}
-
-impl<A, B, C, D> Split for (A, B, C, D) {
-    type Left = (A, B);
-    type Right = (C, D);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d) => ((a, b), (c, d))
-        }
-    }
-}
-
-impl<A, B, C, D, E> Split for (A, B, C, D, E) {
-    type Left = (A, B);
-    type Right = (C, D, E);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e) => ((a, b), (c, d, e))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F> Split for (A, B, C, D, E, F) {
-    type Left = (A, B, C);
-    type Right = (D, E, F);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f) => ((a, b, c), (d, e, f))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G> Split for (A, B, C, D, E, F, G) {
-    type Left = (A, B, C);
-    type Right = (D, E, F, G);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g) =>
-                ((a, b, c),
-                 (d, e, f, g))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H> Split for (A, B, C, D, E, F, G, H) {
-    type Left = (A, B, C, D);
-    type Right = (E, F, G, H);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h) =>
-                ((a, b, c, d),
-                 (e, f, g, h))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I> Split for (A, B, C, D, E, F, G, H, I) {
-    type Left = (A, B, C, D);
-    type Right = (E, F, G, H, I);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i) =>
-                ((a, b, c, d),
-                 (e, f, g, h, i))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J> Split for (A, B, C, D, E, F, G, H, I, J) {
-    type Left = (A, B, C, D, E);
-    type Right = (F, G, H, I, J);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j) =>
-                ((a, b, c, d, e),
-                 (f, g, h, i, j))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K> Split for (A, B, C, D, E, F, G, H, I, J, K) {
-    type Left = (A, B, C, D, E);
-    type Right = (F, G, H, I, J, K);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k) =>
-                ((a, b, c, d, e),
-                 (f, g, h, i, j, k))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L> Split for (A, B, C, D, E, F, G, H, I, J, K, L) {
-    type Left = (A, B, C, D, E, F);
-    type Right = (G, H, I, J, K, L);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l) =>
-                ((a, b, c, d, e, f),
-                 (g, h, i, j, k, l))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M) {
-    type Left = (A, B, C, D, E, F);
-    type Right = (G, H, I, J, K, L, M);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l, m) =>
-                ((a, b, c, d, e, f),
-                 (g, h, i, j, k, l, m))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N) {
-    type Left = (A, B, C, D, E, F, G);
-    type Right = (H, I, J, K, L, M, N);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l, m, n) =>
-                ((a, b, c, d, e, f, g),
-                 (h, i, j, k, l, m, n))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O) {
-    type Left = (A, B, C, D, E, F, G);
-    type Right = (H, I, J, K, L, M, N, O);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o) =>
-                ((a, b, c, d, e, f, g),
-                 (h, i, j, k, l, m, n, o))
-        }
-    }
-}
-
-impl<A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P> Split for (A, B, C, D, E, F, G, H, I, J, K, L, M, N, O, P) {
-    type Left = (A, B, C, D, E, F, G, H);
-    type Right = (I, J, K, L, M, N, O, P);
-    fn split(self) -> (Self::Left, Self::Right) {
-        match self {
-            (a, b, c, d, e, f, g, h, i, j, k, l, m, n, o, p) =>
-                ((a, b, c, d, e, f, g, h),
-                 (i, j, k, l, m, n, o, p))
-        }
-    }
+for_each_prefix!{
+    split_impl,
+    [],
+    [((T0, T1)), ((T2, T3)), ((T4, T5)), ((T6, T7)), ((T8, T9)), ((T10, T11)), ((T12, T13)), ((T14, T15)),]
 }
 
 #[cfg(test)]
@@ -532,6 +226,9 @@ mod test {
         let a = ("test",);
         let out = ().merge(a);
         assert_eq!(out.0, "test");
+        assert_eq!(().merge(()), ());
+        assert_eq!(().merge((1,)), (1,));
+        assert_eq!((1,).merge(()), (1,));
     }
 
     #[test]
@@ -541,5 +238,9 @@ mod test {
         assert_eq!(b.0, 1);
         assert_eq!(c.0, 2);
         assert_eq!(c.1, 3);
+        assert_eq!(().split(), ((), ()));
+        assert_eq!((1,).split(), ((), (1,)));
+        assert_eq!((1,2).split(), ((1,), (2,)));
+        assert_eq!((1,2,3).split(), ((1,), (2,3)));
     }
 }
