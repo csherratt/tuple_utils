@@ -5,7 +5,17 @@ pub trait Append<T> {
     type Output;
     /// Append T onto the end of the tuple returning
     /// a new tuple with the existing elements and T
-    fn append(self, T) -> Self::Output;
+    fn append(self, other: T) -> Self::Output;
+}
+
+/// Helper trait to allow Plucking **tails** of tuples.
+///
+/// This is the inverse of [`Append`]
+pub trait PluckTail {
+    type Head;
+    type Tail;
+    /// Split the tuple into the tail (`Tail`) and the rest part (`Head`)
+    fn pluck_tail(self) -> (Self::Head, Self::Tail);
 }
 
 /// Helper trait to allow Perpending of tuples
@@ -14,7 +24,17 @@ pub trait Prepend<T> {
     /// Append T onto the start of the tuple returning
     /// a new tuple with all the elements from shifted
     /// over one row and T in the first slot
-    fn prepend(self, T) -> Self::Output;
+    fn prepend(self, other: T) -> Self::Output;
+}
+
+/// Helper trait to allow Plucking **heads** of tuples.
+///
+/// This is the inverse of [`Prepend`]
+pub trait Pluck {
+    type Head;
+    type Tail;
+    /// Split the tuple into the head (`Head`) and the rest part (`Tail`)
+    fn pluck(self) -> (Self::Head, Self::Tail);
 }
 
 macro_rules! tuple_impl {
@@ -33,6 +53,19 @@ macro_rules! tuple_impl {
             }
         }
 
+        impl<$($from,)* T> PluckTail for ($($from,)* T,) {
+            type Head = ($($from,)*);
+            type Tail = T;
+
+            #[inline]
+            #[allow(non_snake_case)]
+            fn pluck_tail(self) -> (Self::Head, Self::Tail) {
+                match self {
+                    ($($from,)* x,) => (($($from,)*), x)
+                }
+            }
+        }
+
         // the trailing commas are for the 1 tuple
         impl<$($from,)*  T> Prepend<T> for ( $( $from ,)* ) {
             type Output = (T, $( $from ,)*);
@@ -45,10 +78,26 @@ macro_rules! tuple_impl {
                 }
             }
         }
+
+        impl<$($from,)* T> Pluck for (T, $($from,)*) {
+            type Head = T;
+            type Tail = ($($from,)*);
+
+            #[inline]
+            #[allow(non_snake_case)]
+            fn pluck(self) -> (Self::Head, Self::Tail) {
+                match self {
+                    (x, $($from,)*) => (x, ($($from,)*))
+                }
+            }
+        }
     }
 }
 
 macro_rules! for_each_prefix (
+    ($m:ident, [$(($arg:tt),)*]) => {
+        for_each_prefix!($m, [], [$(($arg),)*]);
+    };
     ($m:ident, [$(($acc:tt),)*], []) => {
         $m!($($acc,)*);
     };
@@ -58,9 +107,8 @@ macro_rules! for_each_prefix (
     };
 );
 
-for_each_prefix!{
+for_each_prefix! {
     tuple_impl,
-    [],
     [(T0), (T1), (T2), (T3), (T4), (T5), (T6), (T7), (T8), (T9), (T10), (T11), (T12), (T13), (T14), (T15),]
 }
 
@@ -88,7 +136,7 @@ pub trait Merge<T> {
     /// that contains the elements of both tuples
     /// ordering is preserved such that LHS elements
     /// come before RHS elements.
-    fn merge(self, T) -> Self::Output;
+    fn merge(self, other: T) -> Self::Output;
 }
 
 macro_rules! for_each_prefix_suffix (
@@ -111,9 +159,8 @@ macro_rules! merge_impl2(
     );
 );
 
-for_each_prefix!{
+for_each_prefix! {
     merge_impl2,
-    [],
     [(T0), (T1), (T2), (T3), (T4), (T5), (T6), (T7), (T8), (T9), (T10), (T11), (T12), (T13), (T14), (T15),]
 }
 
@@ -152,15 +199,14 @@ macro_rules! split_impl (
     );
 );
 
-for_each_prefix!{
+for_each_prefix! {
     split_impl,
-    [],
     [((T0, T1)), ((T2, T3)), ((T4, T5)), ((T6, T7)), ((T8, T9)), ((T10, T11)), ((T12, T13)), ((T14, T15)),]
 }
 
 #[cfg(test)]
 mod test {
-    use {Append, Prepend, Merge, Split};
+    use {Append, Merge, Pluck, PluckTail, Prepend, Split};
 
     #[test]
     fn append() {
@@ -182,6 +228,11 @@ mod test {
         assert_eq!(out.2, 2);
         assert_eq!(out.3, 3);
         assert_eq!(out.4, "foo");
+
+        let (head, tail) = out.pluck_tail();
+        assert_eq!((head, tail), ((0, 1, 2, 3), "foo"));
+        let (head, tail) = head.pluck_tail();
+        assert_eq!((head, tail), ((0, 1, 2), 3));
     }
 
     #[test]
@@ -204,6 +255,11 @@ mod test {
         assert_eq!(out.2, 2);
         assert_eq!(out.3, 1);
         assert_eq!(out.4, 0);
+
+        let (head, tail) = out.pluck();
+        assert_eq!((head, tail), ("foo", (3, 2, 1, 0)));
+        let (head, tail) = tail.pluck();
+        assert_eq!((head, tail), (3, (2, 1, 0)));
     }
 
     #[test]
@@ -240,7 +296,7 @@ mod test {
         assert_eq!(c.1, 3);
         assert_eq!(().split(), ((), ()));
         assert_eq!((1,).split(), ((), (1,)));
-        assert_eq!((1,2).split(), ((1,), (2,)));
-        assert_eq!((1,2,3).split(), ((1,), (2,3)));
+        assert_eq!((1, 2).split(), ((1,), (2,)));
+        assert_eq!((1, 2, 3).split(), ((1,), (2, 3)));
     }
 }
