@@ -95,6 +95,9 @@ macro_rules! tuple_impl {
 }
 
 macro_rules! for_each_prefix (
+    ($m:ident, [$(($arg:tt),)*]) => {
+        for_each_prefix!($m, [], [$(($arg),)*]);
+    };
     ($m:ident, [$(($acc:tt),)*], []) => {
         $m!($($acc,)*);
     };
@@ -106,7 +109,6 @@ macro_rules! for_each_prefix (
 
 for_each_prefix! {
     tuple_impl,
-    [],
     [(T0), (T1), (T2), (T3), (T4), (T5), (T6), (T7), (T8), (T9), (T10), (T11), (T12), (T13), (T14), (T15),]
 }
 
@@ -159,7 +161,6 @@ macro_rules! merge_impl2(
 
 for_each_prefix! {
     merge_impl2,
-    [],
     [(T0), (T1), (T2), (T3), (T4), (T5), (T6), (T7), (T8), (T9), (T10), (T11), (T12), (T13), (T14), (T15),]
 }
 
@@ -200,7 +201,6 @@ macro_rules! split_impl (
 
 for_each_prefix! {
     split_impl,
-    [],
     [((T0, T1)), ((T2, T3)), ((T4, T5)), ((T6, T7)), ((T8, T9)), ((T10, T11)), ((T12, T13)), ((T14, T15)),]
 }
 
