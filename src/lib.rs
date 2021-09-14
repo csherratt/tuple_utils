@@ -37,6 +37,14 @@ pub trait Pluck {
     fn pluck(self) -> (Self::Head, Self::Tail);
 }
 
+pub trait Call<T, O> {
+    fn call(f : Self, t : T) -> O;
+}
+
+pub trait RefCall<T, O> {
+    fn ref_call(f : Self, t : &T) -> O;
+}
+
 macro_rules! tuple_impl {
     // use variables to indicate the arity of the tuple
     ($($from:ident,)*) => {
@@ -89,6 +97,34 @@ macro_rules! tuple_impl {
                 match self {
                     (x, $($from,)*) => (x, ($($from,)*))
                 }
+            }
+        }
+
+        impl<$($from,)* F, O> RefCall<($($from,)*), O> for F
+        where
+            F : for<'a> FnOnce($(&'a $from,)*) -> O
+        {
+            #[inline]
+            #[allow(non_snake_case)]
+            fn ref_call(f : F, _t : &($($from,)*)) -> O {
+
+                let ($(ref $from,)*) = _t;
+
+                f($($from,)*)
+            }
+        }
+
+        impl<$($from,)* F, O> Call<($($from,)*), O> for F
+        where
+            F : FnOnce($($from,)*) -> O
+        {
+            #[inline]
+            #[allow(non_snake_case)]
+            fn call(f : F, _t : ($($from,)*)) -> O {
+
+                let ($($from,)*) = _t;
+
+                f($($from,)*)
             }
         }
     }
@@ -206,7 +242,7 @@ for_each_prefix! {
 
 #[cfg(test)]
 mod test {
-    use {Append, Merge, Pluck, PluckTail, Prepend, Split};
+    use {Append, Merge, Pluck, PluckTail, Prepend, Split, Call, RefCall};
 
     #[test]
     fn append() {
@@ -260,6 +296,32 @@ mod test {
         assert_eq!((head, tail), ("foo", (3, 2, 1, 0)));
         let (head, tail) = tail.pluck();
         assert_eq!((head, tail), (3, (2, 1, 0)));
+    }
+
+    #[test]
+    fn call() {
+        let args = (1, "abc", true);
+        let f = |a : usize, b : &str, c : bool| -> usize {
+            if c {
+                a
+            } else {
+                b.len()
+            }
+        };
+
+        Call::call(f, args.clone());
+        Call::call(f, args);
+
+        let args = (1, "abc", true);
+        let f = |a : &usize, b : &&str, c : &bool| -> usize {
+            if *c {
+                *a
+            } else {
+                b.len()
+            }
+        };
+
+        RefCall::ref_call(f, &args);
     }
 
     #[test]
