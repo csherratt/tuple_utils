@@ -2,7 +2,7 @@
 
 /// Helper trait to allow Appending of tuples
 pub trait Append<T> {
-    type Output;
+    type Output : PluckTail<Head = Self, Tail = T>;
     /// Append T onto the end of the tuple returning
     /// a new tuple with the existing elements and T
     fn append(self, other: T) -> Self::Output;
@@ -12,7 +12,7 @@ pub trait Append<T> {
 ///
 /// This is the inverse of [`Append`]
 pub trait PluckTail {
-    type Head;
+    type Head : Append<Self::Tail, Output = Self>;
     type Tail;
     /// Split the tuple into the tail (`Tail`) and the rest part (`Head`)
     fn pluck_tail(self) -> (Self::Head, Self::Tail);
@@ -20,7 +20,7 @@ pub trait PluckTail {
 
 /// Helper trait to allow Perpending of tuples
 pub trait Prepend<T> {
-    type Output;
+    type Output : Pluck<Head = T, Tail = Self>;
     /// Append T onto the start of the tuple returning
     /// a new tuple with all the elements from shifted
     /// over one row and T in the first slot
@@ -32,7 +32,7 @@ pub trait Prepend<T> {
 /// This is the inverse of [`Prepend`]
 pub trait Pluck {
     type Head;
-    type Tail;
+    type Tail : Prepend<Self::Head, Output = Self>;
     /// Split the tuple into the head (`Head`) and the rest part (`Tail`)
     fn pluck(self) -> (Self::Head, Self::Tail);
 }
@@ -42,13 +42,13 @@ macro_rules! tuple_impl {
     ($($from:ident,)*) => {
         // the trailing commas are for the 1 tuple
         impl<$($from,)* T> Append<T> for ( $( $from ,)* ) {
-            type Output = ( $( $from ,)*  T);
+            type Output = ( $( $from ,)*  T, );
 
             #[inline]
             #[allow(non_snake_case)]
-            fn append(self, x: T) -> ( $( $from ,)*  T) {
+            fn append(self, x: T) -> ( $( $from ,)*  T,) {
                 match self {
-                    ($($from,)*) => ($($from,)* x)
+                    ($($from,)*) => ($($from,)* x,)
                 }
             }
         }
