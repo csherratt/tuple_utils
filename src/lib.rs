@@ -2,7 +2,7 @@
 
 /// Helper trait to allow Appending of tuples
 pub trait Append<T> {
-    type Output;
+    type Output : PluckTail<Head = Self, Tail = T>;
     /// Append T onto the end of the tuple returning
     /// a new tuple with the existing elements and T
     fn append(self, other: T) -> Self::Output;
@@ -12,7 +12,7 @@ pub trait Append<T> {
 ///
 /// This is the inverse of [`Append`]
 pub trait PluckTail {
-    type Head;
+    type Head : Append<Self::Tail, Output = Self>;
     type Tail;
     /// Split the tuple into the tail (`Tail`) and the rest part (`Head`)
     fn pluck_tail(self) -> (Self::Head, Self::Tail);
@@ -20,7 +20,7 @@ pub trait PluckTail {
 
 /// Helper trait to allow Perpending of tuples
 pub trait Prepend<T> {
-    type Output;
+    type Output : Pluck<Head = T, Tail = Self>;
     /// Append T onto the start of the tuple returning
     /// a new tuple with all the elements from shifted
     /// over one row and T in the first slot
@@ -32,9 +32,17 @@ pub trait Prepend<T> {
 /// This is the inverse of [`Prepend`]
 pub trait Pluck {
     type Head;
-    type Tail;
+    type Tail : Prepend<Self::Head, Output = Self>;
     /// Split the tuple into the head (`Head`) and the rest part (`Tail`)
     fn pluck(self) -> (Self::Head, Self::Tail);
+}
+
+pub trait Call<T, O> {
+    fn call(f : Self, t : T) -> O;
+}
+
+pub trait RefCall<T, O> {
+    fn ref_call(f : Self, t : &T) -> O;
 }
 
 macro_rules! tuple_impl {
@@ -42,13 +50,13 @@ macro_rules! tuple_impl {
     ($($from:ident,)*) => {
         // the trailing commas are for the 1 tuple
         impl<$($from,)* T> Append<T> for ( $( $from ,)* ) {
-            type Output = ( $( $from ,)*  T);
+            type Output = ( $( $from ,)*  T, );
 
             #[inline]
             #[allow(non_snake_case)]
-            fn append(self, x: T) -> ( $( $from ,)*  T) {
+            fn append(self, x: T) -> ( $( $from ,)*  T,) {
                 match self {
-                    ($($from,)*) => ($($from,)* x)
+                    ($($from,)*) => ($($from,)* x,)
                 }
             }
         }
@@ -89,6 +97,34 @@ macro_rules! tuple_impl {
                 match self {
                     (x, $($from,)*) => (x, ($($from,)*))
                 }
+            }
+        }
+
+        impl<$($from,)* F, O> RefCall<($($from,)*), O> for F
+        where
+            F : for<'a> FnOnce($(&'a $from,)*) -> O
+        {
+            #[inline]
+            #[allow(non_snake_case)]
+            fn ref_call(f : F, _t : &($($from,)*)) -> O {
+
+                let ($(ref $from,)*) = _t;
+
+                f($($from,)*)
+            }
+        }
+
+        impl<$($from,)* F, O> Call<($($from,)*), O> for F
+        where
+            F : FnOnce($($from,)*) -> O
+        {
+            #[inline]
+            #[allow(non_snake_case)]
+            fn call(f : F, _t : ($($from,)*)) -> O {
+
+                let ($($from,)*) = _t;
+
+                f($($from,)*)
             }
         }
     }
@@ -206,7 +242,7 @@ for_each_prefix! {
 
 #[cfg(test)]
 mod test {
-    use {Append, Merge, Pluck, PluckTail, Prepend, Split};
+    use {Append, Merge, Pluck, PluckTail, Prepend, Split, Call, RefCall};
 
     #[test]
     fn append() {
@@ -260,6 +296,32 @@ mod test {
         assert_eq!((head, tail), ("foo", (3, 2, 1, 0)));
         let (head, tail) = tail.pluck();
         assert_eq!((head, tail), (3, (2, 1, 0)));
+    }
+
+    #[test]
+    fn call() {
+        let args = (1, "abc", true);
+        let f = |a : usize, b : &str, c : bool| -> usize {
+            if c {
+                a
+            } else {
+                b.len()
+            }
+        };
+
+        Call::call(f, args.clone());
+        Call::call(f, args);
+
+        let args = (1, "abc", true);
+        let f = |a : &usize, b : &&str, c : &bool| -> usize {
+            if *c {
+                *a
+            } else {
+                b.len()
+            }
+        };
+
+        RefCall::ref_call(f, &args);
     }
 
     #[test]
