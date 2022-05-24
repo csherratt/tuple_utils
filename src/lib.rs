@@ -2,7 +2,7 @@
 
 /// Helper trait to allow Appending of tuples
 pub trait Append<T> {
-    type Output : PluckTail<Head = Self, Tail = T>;
+    type Output;
     /// Append T onto the end of the tuple returning
     /// a new tuple with the existing elements and T
     fn append(self, other: T) -> Self::Output;
@@ -12,7 +12,7 @@ pub trait Append<T> {
 ///
 /// This is the inverse of [`Append`]
 pub trait PluckTail {
-    type Head : Append<Self::Tail, Output = Self>;
+    type Head;
     type Tail;
     /// Split the tuple into the tail (`Tail`) and the rest part (`Head`)
     fn pluck_tail(self) -> (Self::Head, Self::Tail);
@@ -20,7 +20,7 @@ pub trait PluckTail {
 
 /// Helper trait to allow Perpending of tuples
 pub trait Prepend<T> {
-    type Output : Pluck<Head = T, Tail = Self>;
+    type Output;
     /// Append T onto the start of the tuple returning
     /// a new tuple with all the elements from shifted
     /// over one row and T in the first slot
@@ -32,7 +32,7 @@ pub trait Prepend<T> {
 /// This is the inverse of [`Prepend`]
 pub trait Pluck {
     type Head;
-    type Tail : Prepend<Self::Head, Output = Self>;
+    type Tail;
     /// Split the tuple into the head (`Head`) and the rest part (`Tail`)
     fn pluck(self) -> (Self::Head, Self::Tail);
 }
